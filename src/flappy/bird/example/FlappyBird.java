@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Random;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -15,7 +17,7 @@ import javax.swing.JFrame;
  */
 
 
-public class FlappyBird extends JComponent{
+public class FlappyBird extends JComponent implements KeyListener{
 
     // Height and Width of our game
     static final int WIDTH = 800;
@@ -29,22 +31,40 @@ public class FlappyBird extends JComponent{
     //create sky colour
     Color skyColour = new Color (116,211,242);
     //create bird
-    Rectangle bird = new Rectangle(100, 300, 50, 50);
+    Rectangle bird = new Rectangle(100, 200, 50, 50);
+    //make gravity
+    int gravity = 1;
+    //difference in y
+    int dy = 0;
+    //jump velocity
+    int jumpVelocity = -10;
+    int deathCount = 0;
+    
+    //jump key variable
+    boolean jump = false;
+    boolean lastJump = false;
+    //wait to start
+    boolean start = false;
+    boolean dead = false;
+    
     //create top pipes
     Rectangle[] topPipes = new Rectangle[5];
     //create bottom pipes
     Rectangle[] bottomPipes = new Rectangle[5];   
     
     //create an integer for gap between top and bottom
-    int pipeGap = 150;
+    int pipeGap = 200;
     //create an integer to store the distance between pipes
-    int pipeSpacing = 200;
+    int pipeSpacing = 250;
     //width of a single pipe
     int pipeWidth = 100;
     //the height of a pipe
     int pipeHeight = HEIGHT - 50;
     //minimum distance from edge
-    int minDistance = 200;
+    int minDistance = 250;
+    
+    //speed of the game
+    int speed = 6;
     
     // drawing of the game happens in here
     // we use the Graphics object, g, to perform the drawing
@@ -57,12 +77,12 @@ public class FlappyBird extends JComponent{
         
         // GAME DRAWING GOES HERE 
         //change to colour the sky
-        g.setColor(skyColour);
+        g.setColor(Color.BLACK);
         //draw the sky background
         g.fillRect(0,0,WIDTH,HEIGHT);
         
         //draw the pipes
-        g.setColor(Color.GREEN);
+        g.setColor(Color.BLUE);
         for(int i = 0; i < topPipes.length; i++){
             g.fillRect(topPipes[i].x, topPipes[i].y, topPipes[i].width, topPipes[i].height);
             g.fillRect(bottomPipes[i].x, bottomPipes[i].y, bottomPipes[i].width, bottomPipes[i].height);
@@ -79,6 +99,52 @@ public class FlappyBird extends JComponent{
     }
     
     
+    public void reset(){
+        // keep track of pipe position
+        int pipeX = 600;
+        
+        deathCount++;
+        
+        //create a random number
+        Random randGen = new Random();
+        
+        //set up the pipes
+        for(int i = 0; i < topPipes.length; i++){
+            //generating a random y position
+            //1 * minDistance
+            int pipeY = randGen.nextInt(HEIGHT - (2 * minDistance)) + minDistance;
+            bottomPipes[i] = new Rectangle(pipeX,pipeY, pipeWidth, pipeHeight);
+            topPipes[i] = new Rectangle(pipeX, pipeY - pipeGap - pipeHeight, pipeWidth, pipeHeight);
+            
+            //move the pipeX value over
+            pipeX = pipeX + pipeWidth + pipeSpacing;
+        }
+        //reset the bird
+        bird.y = 200;
+        dy = 0;
+        start = false;
+        dead = false;
+        
+        System.out.println("Your death count is " + deathCount);
+    }
+    
+    
+
+    public void setPipe (int pipePosition){
+         //create a random number
+        Random randGen = new Random();
+         //generating a random y position
+         int pipeY = randGen.nextInt(HEIGHT - (1 * minDistance))+minDistance;
+         
+         //generate the new pipe X coordinate
+         int pipeX = topPipes [pipePosition].x;
+         pipeX = pipeX + (pipeWidth + pipeSpacing)*topPipes.length;
+         
+          bottomPipes[pipePosition].setBounds(pipeX,pipeY, pipeWidth, pipeHeight);
+          topPipes[pipePosition].setBounds(pipeX, pipeY - pipeGap - pipeHeight, pipeWidth, pipeHeight);
+        
+    }
+    
     // The main game loop
     // In here is where all the logic for my game will go
     public void run()
@@ -91,12 +157,14 @@ public class FlappyBird extends JComponent{
         // keep track of pipe position
         int pipeX = 600;
         
+        //create a random number
         Random randGen = new Random();
         
         //set up the pipes
         for(int i = 0; i < topPipes.length; i++){
             //generating a random y position
-            int pipeY = randGen.nextInt(HEIGHT - (2 * minDistance))+minDistance;
+            //1 * minDistance
+            int pipeY = randGen.nextInt(HEIGHT - (2 * minDistance)) + minDistance;
             bottomPipes[i] = new Rectangle(pipeX,pipeY, pipeWidth, pipeHeight);
             topPipes[i] = new Rectangle(pipeX, pipeY - pipeGap - pipeHeight, pipeWidth, pipeHeight);
             
@@ -115,9 +183,58 @@ public class FlappyBird extends JComponent{
             
             // all your game rules and move is done in here
             // GAME LOGIC STARTS HERE 
+           
+            //pause code if start is false
+            if (start){
+            //get the pipes moving
+           
+                if (!dead){
+                for(int i = 0; i <topPipes.length; i++){
+                topPipes[i].x = topPipes[i].x - speed; 
+                bottomPipes[i].x = bottomPipes[i].x - speed; 
+                //check if pipe is off the screen
+                if(topPipes[i].x + pipeWidth < 0){
+                    //move the pipe
+                    setPipe(i);
+                }
+                }
+            }
             
+            //get the bird to fall
+            //apply gravity
+            dy = dy + gravity;
+            //apply change in y to the bird
+            bird.y = bird.y + dy;
             
-
+            //check if bird is offscreen
+            if(bird.y < 0 ){
+                dead = true;
+                
+            }
+            else if(bird.y + bird.height > HEIGHT){
+                dead = true;
+                bird.y = HEIGHT - bird.height;
+                reset();
+            }
+            //dif the bird hit a pipe?
+            //go thriugh all the pipes
+            for (int i = 0; i < topPipes.length; i++){
+               //if bird hit one of the top pipes
+                if (bird.intersects(topPipes[i])){
+                    dead = true;
+                }
+                //did the bird hit one of the bottom pipes
+                else if(bird.intersects(bottomPipes[i])){
+                    dead = true;
+                }
+            }
+            
+            //make the bird fly
+            if(jump && !lastJump && !dead){
+                dy = jumpVelocity;
+            }
+            lastJump = jump;
+            }
             // GAME LOGIC ENDS HERE 
             
             // update the drawing (calls paintComponent)
@@ -139,6 +256,7 @@ public class FlappyBird extends JComponent{
                 }catch(Exception e){};
             }
         }
+        
     }
     
     /**
@@ -146,7 +264,7 @@ public class FlappyBird extends JComponent{
      */
     public static void main(String[] args) {
         // creates a windows to show my game
-        JFrame frame = new JFrame("My Game");
+        JFrame frame = new JFrame("Fatty Bird by Alex Miclaus");
        
         // creates an instance of my game
         FlappyBird game = new FlappyBird();
@@ -154,7 +272,10 @@ public class FlappyBird extends JComponent{
         game.setPreferredSize(new Dimension(WIDTH,HEIGHT));
         // adds the game to the window
         frame.add(game);
-         
+        
+        //add the key listener
+        frame.addKeyListener(game);
+        
         // sets some options and size of the window automatically
         frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -164,5 +285,29 @@ public class FlappyBird extends JComponent{
         
         // starts my game loop
         game.run();
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+        //it's a trap
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+         int key = e.getKeyCode();
+         
+         if(key == KeyEvent.VK_SPACE){
+            jump = true;  
+            start = true;     
+    }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        int key = e.getKeyCode();
+        if(key == KeyEvent.VK_SPACE){
+            jump = false;
+           
+    }
     }
 }
