@@ -17,7 +17,7 @@ import javax.swing.JFrame;
  */
 
 
-public class FlappyBird extends JComponent implements KeyListener{
+public class FlappyBirdOriginal extends JComponent implements KeyListener{
 
     // Height and Width of our game
     static final int WIDTH = 800;
@@ -37,7 +37,7 @@ public class FlappyBird extends JComponent implements KeyListener{
     //difference in y
     int dy = 0;
     //jump velocity
-    int jumpVelocity = -10;
+    int jumpVelocity = -12;
     int deathCount = 0;
     
     //jump key variable
@@ -267,7 +267,7 @@ public class FlappyBird extends JComponent implements KeyListener{
         JFrame frame = new JFrame("Fatty Bird by Alex Miclaus");
        
         // creates an instance of my game
-        FlappyBird game = new FlappyBird();
+        FlappyBirdOriginal game = new FlappyBirdOriginal();
         // sets the size of my game
         game.setPreferredSize(new Dimension(WIDTH,HEIGHT));
         // adds the game to the window
